@@ -40,18 +40,7 @@ export const GraphQLProfile = new GraphQLObjectType({
   }),
 });
 
-export const GraphQLBasicUser = new GraphQLObjectType({
-  name: 'BasicUser',
-  fields: () => ({
-    id: { type: GraphQLString },
-    firstName: { type: GraphQLString },
-    lastName: { type: GraphQLString },
-    email: { type: GraphQLString },
-    subscribedToUserIds: { type: new GraphQLList(GraphQLString) },
-  })
-,});
-
-export const GraphQLUser = new GraphQLObjectType({
+export const GraphQLUser: GraphQLObjectType = new GraphQLObjectType({
   name: 'User',
   fields: () => ({
     id: { type: GraphQLString },
@@ -85,9 +74,17 @@ export const GraphQLUser = new GraphQLObjectType({
       }
     },
     userSubscribedTo: {
-      type: new GraphQLList(GraphQLBasicUser),
+      type: new GraphQLList(GraphQLUser),
       resolve: async (user, args, contextValue: FastifyInstance) => {
         return await contextValue.db.users.findMany({key: 'subscribedToUserIds', inArray: user.id});
+      }
+    },
+    subscribedToUser: {
+      type: new GraphQLList(GraphQLUser),
+      resolve: async (user, args, contextValue: FastifyInstance) => {
+        return user.subscribedToUserIds.map(async (id: string) => {
+          return await contextValue.db.users.findOne({key: 'id', equals: id});
+        })
       }
     },
   }),
