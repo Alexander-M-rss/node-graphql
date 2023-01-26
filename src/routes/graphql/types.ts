@@ -1,3 +1,4 @@
+import { FastifyInstance } from 'fastify';
 import {
   GraphQLInt,
   GraphQLList,
@@ -47,5 +48,30 @@ export const GraphQLUser = new GraphQLObjectType({
     lastName: { type: GraphQLString },
     email: { type: GraphQLString },
     subscribedToUserIds: { type: new GraphQLList(GraphQLString) },
+    posts: {
+      type: new GraphQLList(GraphQLPost),
+      resolve: async (user, args, contextValue: FastifyInstance) => {
+        return await contextValue.db.posts.findMany({key: 'userId', equals: user.id});
+      }
+    },
+    profile: {
+      type: GraphQLProfile,
+      resolve: async (user, args, contextValue: FastifyInstance) => {
+        return await contextValue.db.profiles.findOne({key: 'userId', equals: user.id});
+      }
+    },
+    memberType: {
+      type: GraphQLMemberType,
+      resolve: async (user, args, contextValue: FastifyInstance) => {
+        const profile = await contextValue.db.profiles.findOne({key: 'userId', equals: user.id});
+
+        if (!profile) {
+
+          return Promise.resolve(null);
+        }
+
+        return await contextValue.db.memberTypes.findOne({key: 'id', equals: profile.memberTypeId});
+      }
+    }
   }),
 });
