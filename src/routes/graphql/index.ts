@@ -18,10 +18,10 @@ const plugin: FastifyPluginAsyncJsonSchemaToTs = async (
         query: rootQuery,
       });
       const source = request.body.query || request.body.mutation || '';
-      // const variableValues = request.body.variables || {};
+      const variableValues = request.body.variables || {};
       const contextValue = fastify;
 
-      return await graphql({ schema, source, contextValue });
+      return await graphql({ schema, source, variableValues, contextValue });
     },
   );
 };
