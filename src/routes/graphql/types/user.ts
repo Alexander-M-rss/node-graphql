@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import {
+  GraphQLInputObjectType,
   GraphQLList,
+  GraphQLNonNull,
   GraphQLObjectType,
   GraphQLString,
 } from 'graphql';
@@ -55,3 +57,13 @@ export const GraphQLUser: GraphQLObjectType = new GraphQLObjectType({
     },
   }),
 });
+
+export const GraphQLCreateUserInput = new GraphQLInputObjectType({
+  name: 'CreateUserInput',
+  fields: () => ({
+    firstName: { type: new GraphQLNonNull(GraphQLString) },
+    lastName: { type: new GraphQLNonNull(GraphQLString) },
+    email: { type: new GraphQLNonNull(GraphQLString) },
+  }),
+});
+
