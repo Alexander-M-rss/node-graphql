@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import {
+  GraphQLID,
   GraphQLInputObjectType,
   GraphQLList,
   GraphQLNonNull,
@@ -67,3 +68,19 @@ export const GraphQLCreateUserInput = new GraphQLInputObjectType({
   }),
 });
 
+export const GraphQLUpdateUserInput = new GraphQLInputObjectType({
+  name: 'UpdateUserInput',
+  fields: () => ({
+    firstName: { type: GraphQLString },
+    lastName: { type: GraphQLString },
+    email: { type: GraphQLString },
+    subscribedToUserIds: { type: new GraphQLList(GraphQLString) },
+  }),
+});
+
+export const GraphQLUserIdInput = new GraphQLInputObjectType({
+  name: 'UserIdInput',
+  fields: () => ({
+    id: { type: new GraphQLNonNull(GraphQLID) },
+  }),
+});
