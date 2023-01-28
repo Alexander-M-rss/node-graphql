@@ -1,6 +1,6 @@
-import { FastifyInstance } from 'fastify';
 import { GraphQLID, GraphQLNonNull, GraphQLObjectType } from 'graphql';
 import { GraphQLPost, GraphQLCreatePostInput, GraphQLUser, GraphQLCreateUserInput, GraphQLCreateProfileInput, GraphQLProfile, GraphQLUpdateUserInput, GraphQLUpdateProfileInput, GraphQLUpdatePostInput, GraphQLMemberType, GraphQLUpdateMemberTypeInput, GraphQLUserIdInput } from './types';
+import { Context } from './types/context';
 
 export const rootMutation = new GraphQLObjectType({
   name: 'RootMutation',
@@ -10,8 +10,8 @@ export const rootMutation = new GraphQLObjectType({
       args: {
         user: { type: new GraphQLNonNull(GraphQLCreateUserInput) }
       },
-      resolve: async (source, { user }, contextValue: FastifyInstance) => {
-        return await contextValue.db.users.create(user);
+      resolve: async (source, { user }, context: Context) => {
+        return await context.fastify.db.users.create(user);
       },
     },
     createProfile: {
@@ -19,8 +19,8 @@ export const rootMutation = new GraphQLObjectType({
       args: {
         profile: { type: new GraphQLNonNull(GraphQLCreateProfileInput) }
       },
-      resolve: async (source, { profile }, contextValue: FastifyInstance) => {
-        return await contextValue.db.profiles.create(profile);
+      resolve: async (source, { profile }, context: Context) => {
+        return await context.fastify.db.profiles.create(profile);
       },
     },
     createPost: {
@@ -28,8 +28,8 @@ export const rootMutation = new GraphQLObjectType({
       args: {
         post: { type: new GraphQLNonNull(GraphQLCreatePostInput) }
       },
-      resolve: async (source, { post }, contextValue: FastifyInstance) => {
-        return await contextValue.db.posts.create(post);
+      resolve: async (source, { post }, context: Context) => {
+        return await context.fastify.db.posts.create(post);
       },
     },
     updateUser: {
@@ -40,14 +40,14 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUpdateUserInput),
         },
       },
-      resolve: async (source, { id, user }, contextValue: FastifyInstance) => {
+      resolve: async (source, { id, user }, context: Context) => {
         try {
           console.log({ id, user });
         
-          return await contextValue.db.users.change(id, user);
+          return await context.fastify.db.users.change(id, user);
         }
         catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
     },
@@ -59,13 +59,13 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUpdateProfileInput),
         },
       },
-      resolve: async (source, { id, profile }, contextValue: FastifyInstance) => {
+      resolve: async (source, { id, profile }, context: Context) => {
         try {
         
-          return await contextValue.db.profiles.change(id, profile);
+          return await context.fastify.db.profiles.change(id, profile);
         }
         catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
     },
@@ -77,13 +77,13 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUpdatePostInput),
         },
       },
-      resolve: async (source, { id, post }, contextValue: FastifyInstance) => {
+      resolve: async (source, { id, post }, context: Context) => {
         try {
         
-          return await contextValue.db.posts.change(id, post);
+          return await context.fastify.db.posts.change(id, post);
         }
         catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
     },
@@ -95,13 +95,13 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUpdateMemberTypeInput),
         },
       },
-      resolve: async (source, { id, memberType }, contextValue: FastifyInstance) => {
+      resolve: async (source, { id, memberType }, context: Context) => {
         try {
         
-          return await contextValue.db.memberTypes.change(id, memberType);
+          return await context.fastify.db.memberTypes.change(id, memberType);
         }
         catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
     },
@@ -113,15 +113,15 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUserIdInput),
         },
       },
-      resolve: async (source, { id, subscribeToUser }, contextValue: FastifyInstance) => {
+      resolve: async (source, { id, subscribeToUser }, context: Context) => {
         if (id === subscribeToUser.id) {
-          throw contextValue.httpErrors.badRequest('User cannot subscribe to himself');
+          throw context.fastify.httpErrors.badRequest('User cannot subscribe to himself');
         }
 
-        const user = await contextValue.db.users.findOne({ key: 'id', equals: subscribeToUser.id});
+        const user = await context.fastify.db.users.findOne({ key: 'id', equals: subscribeToUser.id});
 
         if (!user) {
-          throw contextValue.httpErrors.badRequest('User not found');
+          throw context.fastify.httpErrors.badRequest('User not found');
         }
 
         if (user.subscribedToUserIds.includes(id)) {
@@ -132,9 +132,9 @@ export const rootMutation = new GraphQLObjectType({
         
         try {
 
-          return await contextValue.db.users.change(subscribeToUser.id, { subscribedToUserIds: user.subscribedToUserIds });
+          return await context.fastify.db.users.change(subscribeToUser.id, { subscribedToUserIds: user.subscribedToUserIds });
         } catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
 
@@ -147,20 +147,20 @@ export const rootMutation = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLUserIdInput),
         },
       },
-      resolve: async (source, { id, unsubscribeFromUser }, contextValue: FastifyInstance) => {
-        const user = await contextValue.db.users.findOne({ key: 'id', equals: unsubscribeFromUser.id});
+      resolve: async (source, { id, unsubscribeFromUser }, context: Context) => {
+        const user = await context.fastify.db.users.findOne({ key: 'id', equals: unsubscribeFromUser.id});
 
         if (!user) {
-          throw contextValue.httpErrors.badRequest('User not found');
+          throw context.fastify.httpErrors.badRequest('User not found');
         }
         if (!user.subscribedToUserIds.includes(id)) {
-          throw contextValue.httpErrors.badRequest('User hasn`t this subscription');
+          throw context.fastify.httpErrors.badRequest('User hasn`t this subscription');
         }
         try {
     
-          return await contextValue.db.users.change(unsubscribeFromUser.id, { subscribedToUserIds: user.subscribedToUserIds.filter((subscriberId) => subscriberId !== id) });
+          return await context.fastify.db.users.change(unsubscribeFromUser.id, { subscribedToUserIds: user.subscribedToUserIds.filter((subscriberId) => subscriberId !== id) });
         } catch (e) {
-          throw contextValue.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
+          throw context.fastify.httpErrors.badRequest(e instanceof Error ? e.message : undefined);
         }
       },
     },

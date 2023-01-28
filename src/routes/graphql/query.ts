@@ -10,35 +10,52 @@ import {
   GraphQLProfile,
   GraphQLUser,
 } from './types';
-import { FastifyInstance } from 'fastify';
+import { Context } from './types/context';
 
 export const rootQuery = new GraphQLObjectType({
   name: 'RootQuery',
   fields: {
     memberTypes: {
       type: new GraphQLList(GraphQLMemberType),
-      resolve: async (source, args, contextValue: FastifyInstance) => {
+      resolve: async (source, args, context: Context) => {
+        const memberTypes = await context.fastify.db.memberTypes.findMany();
 
-        return contextValue.db.memberTypes.findMany();
+        memberTypes.forEach((type) => context.memberTypeLoader.prime(type.id, type));
+
+        return memberTypes;
       },
     },
     posts: {
       type: new GraphQLList(GraphQLPost),
-      resolve: async (source, args, contextValue: FastifyInstance) => {
+      resolve: async (source, args, context: Context) => {
+        const posts = await context.fastify.db.posts.findMany();
 
-        return await contextValue.db.posts.findMany();
+        posts.forEach((post) => context.postLoader.prime(post.id, post));
+
+        return posts;
       },
     },
     profiles: { type: new GraphQLList(GraphQLProfile),
-      resolve: async (source, args, contextValue: FastifyInstance) => {
+      resolve: async (source, args, context: Context) => {
+        const profiles = await context.fastify.db.profiles.findMany();
 
-        return await contextValue.db.profiles.findMany()
+        profiles.forEach((profile) => context.profileLoader.prime(profile.id, profile));
+
+        return profiles;
       },
     },
     users: { type: new GraphQLList(GraphQLUser),
-      resolve: async (source, args, contextValue: FastifyInstance) => {
+      resolve: async (source, args, context: Context) => {
+        const users = await context.fastify.db.users.findMany();
 
-        return await contextValue.db.users.findMany()
+        users.forEach((user) => {
+          context.userLoader.prime(user.id, user);
+          context.subscriptionsByUserIdLoader.prime(user.id,
+            users.filter((subscription) => subscription.subscribedToUserIds.includes(user.id))
+          );
+        });
+
+        return users;
       }
     },
     memberType: {
@@ -46,14 +63,11 @@ export const rootQuery = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: async (source, { id }, contextValue: FastifyInstance) => {
-        const memberType = await contextValue.db.memberTypes.findOne({
-          key: 'id',
-          equals: id,
-        });
+      resolve: async (source, { id }, context: Context) => {
+        const memberType = await context.memberTypeLoader.load(id);
 
         if (!memberType) {
-          throw contextValue.httpErrors.notFound('Member type not found');
+          throw context.fastify.httpErrors.notFound('Member type not found');
         }
 
         return memberType;
@@ -64,14 +78,11 @@ export const rootQuery = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: async (source, { id }, contextValue: FastifyInstance) => {
-        const post = await contextValue.db.posts.findOne({
-          key: 'id',
-          equals: id,
-        });
+      resolve: async (source, { id }, context: Context) => {
+        const post = await context.postLoader.load(id);
 
         if (!post) {
-          throw contextValue.httpErrors.notFound('Post not found');
+          throw context.fastify.httpErrors.notFound('Post not found');
         }
 
         return post;
@@ -82,14 +93,11 @@ export const rootQuery = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: async (source, { id }, contextValue: FastifyInstance) => {
-        const profile = await contextValue.db.profiles.findOne({
-          key: 'id',
-          equals: id,
-        });
+      resolve: async (source, { id }, context: Context) => {
+        const profile = await context.profileLoader.load(id);
 
         if (!profile) {
-          throw contextValue.httpErrors.notFound('Profile not found');
+          throw context.fastify.httpErrors.notFound('Profile not found');
         }
 
         return profile;
@@ -100,14 +108,11 @@ export const rootQuery = new GraphQLObjectType({
       args: {
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: async (source, { id }, contextValue: FastifyInstance) => {
-        const user = await contextValue.db.users.findOne({
-          key: 'id',
-          equals: id,
-        });
+      resolve: async (source, { id }, context: Context) => {
+        const user = await context.userLoader.load(id);
 
         if (!user) {
-          throw contextValue.httpErrors.notFound('User not found');
+          throw context.fastify.httpErrors.notFound('User not found');
         }
 
         return user;
