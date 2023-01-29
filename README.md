@@ -1,4 +1,5 @@
 ## Assignment: Graphql
+**Notice**: You can find GQL requests collection for Postman in root of this project `node-graphql.postman_collection.json`.
 ### Tasks:
 1. Add logic to the restful endpoints (users, posts, profiles, member-types folders in ./src/routes).  
    1.1. npm run test - 100%  
